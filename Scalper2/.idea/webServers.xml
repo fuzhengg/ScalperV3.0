@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="25d90816-430a-4a99-ac50-72b7283550e4" name="server_a" url="http://10.200.241.250">
+        <fileTransfer host="10.200.241.250" port="222" rootFolder="/home/bigdatadev/fuzheng/ideaProject" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions controlEncoding="UTF-8" dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="222" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="19c97b2e-419b-4aab-af13-ab485a8a80ee" name="Scalper3" url="http://10.200.241.250">
+        <fileTransfer host="10.200.241.250" port="222" rootFolder="/home/bigdatadev/fuzheng/HnClassfier/Scalper3/online--2017-11-24" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions controlEncoding="utf-8" dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="222" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
