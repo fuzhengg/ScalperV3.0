@@ -1,52 +1,53 @@
-// /opt/spark/spark-2.1.0-bin-hadoop2.6/bin/spark-shell --executor-cores 8 --num-executors 18 --executor-memory 20g --master yarn  --driver-memory 30g --conf spark.kryoserializer.buffer.max=656m  --conf spark.kryoserializer.buffer=64m   --conf spark.driver.maxResultSize=2g --conf spark.shuffle.manager=SORT --conf spark.yarn.executor.memoryOverhead=4096
+// /opt/spark/spark-2.1.0-bin-hadoop2.6/bin/spark-shell --executor-cores 6 --num-executors 20 --executor-memory 7g --master yarn  --driver-memory 10g --name Scalper
+// --conf spark.kryoserializer.buffer.max=656m  --conf spark.kryoserializer.buffer=64m   --conf spark.driver.maxResultSize=2g --conf spark.shuffle.manager=SORT --conf spark.yarn.executor.memoryOverhead=4096
 //--deploy-mode cluster
+//理论上该版本和上版本好很多，改进为：
+//1. 修改生成概率转移矩阵维度，使得下单信息和收货信息结合，避免多人给一人送礼造成的误杀
+//2. 连通图尺寸问题得以修正
+//3. 朋友圈大于8个人才会被拦截
+
+
 package com.bl
 
-import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
-import com.bl.ConnectGraph.getConnectGraph
+import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{SparkConf, SparkContext}
 
 
 object ScalperThird extends java.io.Serializable  {
-  case class connectFiltedSchema(circle_id:Long,circle_size:Long,circle_members:Array[Long])
   def main(args: Array[String]): Unit = {
     //Prepare
-//    val Year = 2015
-//    val Month = 999
-//    val Day = 999
     val Year = strToInt(args(0))
     val Month = strToInt(args(1))
     val Day = strToInt(args(2))
+    val cg = "20180322nonRealTime"
 
     //1. Create the context
     System.out.println("黄牛模型开始计算")
     val conf = new SparkConf().setAppName("ScalperThird").set("spark.serializer", "org.apache.spark.serializer.JavaSerializer")
     val sc = new SparkContext(conf)
     val sparkSql = SparkSession.builder.enableHiveSupport.getOrCreate()
-    import sparkSql.implicits._
-
-
+    val HnMember_info = sparkSql.sql(s"SELECT a.* " +
+                                       s"FROM  algorithm_data.HnMember_info a  " +
+                                       s"where  ecp_ind is not null and online_total_need_amt is not null and member_id is not null ")
+    //    HnMember_info.printSchema()
     //2. memberCross Info
     System.out.println("会员交叉比较")
     val mc = new memberCross()
-    mc.getMemberCross(Year,Month,sparkSql)
-
+    val all_dim = mc.getMemberCross(sparkSql,HnMember_info)
 
     //3. ConnectGraph
     System.out.println("社区模型计算")
-    val ConnectGraph = getConnectGraph(sparkSql)
+    val cgraph = new ConnectGraph()
+    val ConnectGraph = cgraph.getConnectGraph(sparkSql,all_dim,HnMember_info)
+    HnMember_info.unpersist()
 
-    //4. the numbers of circleGraph's member
-    System.out.println("社区模型计算结果过滤")
-    val connectFilted = ConnectGraph.vertices.map(_.swap).groupByKey.filter(x => x._2.size > 5) //社交圈结果,且社交圈会员数量大于5
-    val connectFilted_a=connectFilted.map(x=>((x._1,x._2.size),x._2.toArray))
-    val connectFiltedDf=connectFilted_a.map(x=>(x._1._1,x._1._2,x._2))
-    val connectFiltedTableDf=connectFiltedDf.map(x=>connectFiltedSchema(x._1,x._2,x._3)).toDF()
-
-    //5. save the result to Table :algorithm_data.hnallorder_circleResult
-    System.out.println("保存模型计算结果")
+    //4.mark Circle and save the result to Table
+    System.out.println("社交圈打分,保存模型计算结果")
     val save = new saveCircle()
-    save.saveCircleTable(Year,Month,Day,sparkSql,connectFilted,connectFiltedTableDf)
+    save.circleScore(Year,Month,Day,cg,sparkSql,ConnectGraph,HnMember_info)
+
+
 
 
 

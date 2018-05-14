@@ -1,75 +1,91 @@
 
-
-
-
-
-
-
-CREATE TABLE algorithm_data.allConsumMember (
-    xmember_id bigint
-  , ymember_id bigint
+--最终结果表
+drop table if exists algorithm_data.hnCircleScore;
+CREATE TABLE algorithm_data.hnCircleScore (
+circle_id bigint
+,circle_size bigint
+,ecpPer Double
+,score Double
+,circle_memberid bigint
+,ecp_ind int
+,register_time string
+,ip  string
+,ipMemNumMax bigint
+,device_id  string
+,devMemNumMax bigint
+,recept_address_same  string
+,sameAddressMemNumMax bigint
+,recept_name  string
+,nameMemNumMax bigint
+,recept_phone   string
+,rePhoneMemNumMax bigint
+,ipmemScoreOne  Double
+,devmemScoreOne  Double
+,sameaddressmemScoreOne  Double
+,namememScoreOne  Double
+,phonememScoreOne  Double
+,registerScoreOne  Double
+,saleMoneyScoreOne  Double
+,timeScoreOne  Double
 )
-PARTITIONED BY (year int,month int)
+PARTITIONED BY (year int,month int,day int,category string)
 ;
 
-
-CREATE TABLE algorithm_data.hnallorder_circleResult (
-   circle_id bigint
-  ,circle_size  bigint
-  ,circle_memberID bigint
-  ,ip	string
-  ,device_id	string
-  ,recept_address_same	string
-  ,recept_address_detail	string
-  ,recept_name	string
-  ,recept_phone	string
-  ,register_phone	string
-  ,recept_mobilearea_a	string
-  ,register_mobilearea_a	string
-  ,register_time	string
-  ,online_first_sale_time	string
-  ,online_last_sale_time	string
-  ,online_first_need_amt	float
-  ,online_last_need_amt	float
-  ,online_total_need_amt	float
-  ,first_acquire_time	string
-  ,last_acquire_time	string
-  ,getcouponsecdif	float
-  ,orderdetailgoodscost	float
-  ,avg_detailorder_discount	float
-  ,coupon_amount	float
-  ,avgcouponuse	float
-  ,getcouponnum	float
+--线上详情备份表
+drop table if exists algorithm_data.HnDoubtfulOrder_all_back;
+CREATE TABLE algorithm_data.HnDoubtfulOrder_all_back (
+member_id string
+,recept_phone string
+,recept_name  string
+,recept_address_detail  string
+,ip string
+,device_id string
+,register_time string
+,circle_id bigint
+,circle_size  bigint
+,level string
 )
-PARTITIONED BY (year int,month int,day int)
+PARTITIONED BY (day string,special String)
+;
+
+#特殊情况添加
+insert  into table algorithm_data.HnDoubtfulOrder_all_back partition (day='2018-03-19' ,special='black')
+select null as member_id,null as recept_phone,null as recept_name,'上海市 市辖区 黄浦区 四川南路26号' as recept_address_detail
+,null as ip,null as device_id,null as register_time,null as circle_id ,null as circle_size,null as level
+from algorithm_data.test2
+limit 1
 ;
 
 
 
+use algorithm_data ;
+drop table if exists algorithm_data.Hn_PhonewhiteList ;
+create table algorithm_data.Hn_PhonewhiteList (
+whitePhone string
+)
+ROW format delimited fields terminated by ' ' STORED AS TEXTFILE;
+load data local inpath '/home/hive/fuzheng/Scalper3/whiteList.txt' into table algorithm_data.Hn_PhonewhiteList;
 
-use algorithm_data;
-drop table if exists HnAllOrder_spark_LG;
-create table HnAllOrder_spark_LG AS
-select distinct
-BIGINT(a.member_id) member_id
-,BIGINT(a.member_level_id) member_level_id
-,BIGINT(a.ECP_ind) ECP_ind
-,a.register_time
-,unix_timestamp(a.online_last_sale_time) online_last_sale_time
-,unix_timestamp(a.online_first_sale_time) online_first_sale_time
-,Double(a.online_first_sale_amt) online_first_sale_amt
-,Double(a.online_first_discount_amt) online_first_discount_amt
-,Double(a.online_last_sale_amt) online_last_sale_amt
-,Double(a.online_last_discount_amt) online_last_discount_amt
-,Double(a.online_total_sale_amt) online_total_sale_amt
-,Double(a.online_total_discount_amt) online_total_discount_amt
-,Double(b.getCouponSecDifAvg) getCouponSecDifAvg
-,Double(b.getCouponNum) getCouponNum
-from algorithm_data.HnAllOrder_ab a
-join
-(select member_id
-,avg(  unix_timestamp(acquire_time)-unix_timestamp(create_time) )as getCouponSecDifAvg
-,count(distinct coupon_code) getCouponNum
-from sourcedata.s01_camp_user_coupon
-GROUP BY member_id) b on a.member_id=b.member_id
-;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

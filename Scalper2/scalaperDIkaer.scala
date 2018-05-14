@@ -10,8 +10,6 @@ import org.apache.spark.sql.SQLContext
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.bl.main.{emptyList, subGraph}
-
 import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.graphx.{Edge, _}
 import org.apache.spark.rdd.RDD
